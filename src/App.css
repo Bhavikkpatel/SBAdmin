@@ -1,0 +1,10 @@
+.card-img-top {
+  height: 150px;
+  object-fit: contain;
+}
+
+.spare-part-img {
+  height: 100px;
+  width: 100px;
+  object-fit: contain;
+}

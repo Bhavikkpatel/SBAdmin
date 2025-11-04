@@ -1,0 +1,79 @@
+.spare-parts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.spare-part-card {
+  background-color: #fff;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.spare-part-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.spare-part-card-image {
+  width: 100%;
+  height: 200px;
+  object-fit: contain;
+  background-color: #f8f9fa;
+  padding: 1rem;
+}
+
+.spare-part-card-body {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.spare-part-card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.spare-part-card-text {
+  font-size: 0.9rem;
+  color: #6c757d;
+  flex-grow: 1;
+  margin-bottom: 1rem;
+}
+
+.spare-part-card-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: auto;
+}
+
+.spare-part-card-actions .btn {
+  flex: 1;
+  border-radius: 8px;
+  font-weight: 600;
+  padding: 0.6rem;
+  text-align: center;
+}
+
+.btn-edit {
+  background-color: #007bff;
+  color: white;
+}
+
+.btn-view {
+  background-color: green;
+  color: white;
+}
+
+.btn-delete {
+  background-color: #dc3545;
+  color: white;
+}

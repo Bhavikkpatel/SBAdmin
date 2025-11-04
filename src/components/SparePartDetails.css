@@ -1,0 +1,26 @@
+.spare-part-details-container {
+  display: flex;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.spare-part-image-gallery {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.spare-part-main-image {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  aspect-ratio: 1 / 1;
+}
+
+.spare-part-info {
+  flex: 1;
+}
