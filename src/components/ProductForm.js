@@ -1,25 +1,24 @@
 import React, { useState } from 'react';
-import { collection, setDoc, updateDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase/config';
 import './Form.css';
 
 const ProductForm = ({ product, companyId, setShowForm }) => {
+  const [initialProductData] = useState(product || {
+    description: '',
+    modelId: '',
+    specifications: [],
+    category: '',
+  });
   const [productData, setProductData] = useState(() => {
-    const initialData = product || {
-      description: '',
-      id: '',
-      specifications: [],
-    };
-
-    // Ensure specifications is an array for the form
-    if (initialData.specifications && typeof initialData.specifications === 'object' && !Array.isArray(initialData.specifications)) {
-      initialData.specifications = Object.entries(initialData.specifications).map(([key, value]) => ({ key, value }));
-    } else if (!initialData.specifications) {
-      initialData.specifications = [];
+    const data = { ...initialProductData };
+    if (data.specifications && typeof data.specifications === 'object' && !Array.isArray(data.specifications)) {
+      data.specifications = Object.entries(data.specifications).map(([key, value]) => ({ key, value }));
+    } else if (!data.specifications) {
+      data.specifications = [];
     }
-
-    return initialData;
+    return data;
   });
   const [manual, setManual] = useState(null);
   const [thumbnail, setThumbnail] = useState(null);
@@ -60,7 +59,7 @@ const ProductForm = ({ product, companyId, setShowForm }) => {
 
   const handleDelete = async () => {
     if (product) {
-      await updateDoc(doc(db, 'companies', companyId, 'products', product.id), {
+      await updateDoc(doc(db, 'companies', companyId, 'products', product.docId), {
         isDeleted: true,
       });
       setShowForm(false);
@@ -72,16 +71,17 @@ const ProductForm = ({ product, companyId, setShowForm }) => {
     setLoading(true);
     let manualUrl = product ? product.manualUrl : '';
     let thumbNailUrl = product ? product.thumbNailUrl : '';
-
+    console.log(product);
     try {
-      if (manual) {
-        const storageRef = ref(storage, `manuals/${productData.id}/${manual.name}`);
+      const productId = product ? product.docId : doc(collection(db, 'temp')).id;
+      if (manual && manual.name) {
+        const storageRef = ref(storage, `manuals/${productId}/${manual.name}`);
         await uploadBytes(storageRef, manual);
         manualUrl = await getDownloadURL(storageRef);
       }
 
-      if (thumbnail) {
-        const storageRef = ref(storage, `thumbnails/${productData.id}/${thumbnail.name}`);
+      if (thumbnail && thumbnail.name) {
+        const storageRef = ref(storage, `thumbnails/${productId}/${thumbnail.name}`);
         await uploadBytes(storageRef, thumbnail);
         thumbNailUrl = await getDownloadURL(storageRef);
       }
@@ -102,15 +102,17 @@ const ProductForm = ({ product, companyId, setShowForm }) => {
       };
 
       if (product) {
-        await updateDoc(doc(db, 'companies', companyId, 'products', product.id), finalProductData);
-      } else {
-        if (productData.id) {
-          await setDoc(doc(db, 'companies', companyId, 'products', productData.id), finalProductData);
-        } else {
-          alert("Product ID is required.");
-          setLoading(false);
-          return;
+        const updatedFields = {};
+        for (const key in finalProductData) {
+          if (finalProductData[key] !== initialProductData[key]) {
+            updatedFields[key] = finalProductData[key];
+          }
         }
+        if (Object.keys(updatedFields).length > 0) {
+          await updateDoc(doc(db, 'companies', companyId, 'products', product.docId), updatedFields);
+        }
+      } else {
+        await addDoc(collection(db, 'companies', companyId, 'products'), finalProductData);
       }
     } catch (error) {
       console.error("Error uploading file: ", error);
@@ -127,12 +129,16 @@ const ProductForm = ({ product, companyId, setShowForm }) => {
         <h2 className="form-title">{product ? 'Edit Product' : 'Add Product'}</h2>
         {/* ... other form groups ... */}
         <div className="form-group">
-          <label htmlFor="productId">ID</label>
-          <input id="productId" name="id" value={productData.id} onChange={handleChange} placeholder="Enter product ID" className="form-control" />
+          <label htmlFor="modelId">Model ID</label>
+          <input id="modelId" name="modelId" value={productData.modelId} onChange={handleChange} placeholder="Enter product model ID" className="form-control" required />
         </div>
         <div className="form-group">
           <label htmlFor="productDescription">Description</label>
           <textarea id="productDescription" name="description" value={productData.description} onChange={handleChange} placeholder="Enter product description" className="form-control" />
+        </div>
+        <div className="form-group">
+          <label htmlFor="productCategory">Category</label>
+          <input id="productCategory" name="category" value={productData.category} onChange={handleChange} placeholder="Enter product category" className="form-control" />
         </div>
         
         <h5 className="mt-4">Specifications</h5>

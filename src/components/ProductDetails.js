@@ -29,11 +29,12 @@ const ProductDetails = ({ companyId, productId }) => {
       <div className="product-details-container">
         <div className="product-image-gallery">
           {/* Thumbnail gallery can be added here */}
-          <img src={product.thumbNailUrl} alt={product.id} className="product-main-image" />
+          <img src={product.thumbNailUrl} alt={product.modelId} className="product-main-image" />
         </div>
         <div className="product-info">
-          <h1>{product.id}</h1>
+          <h1>{product.modelId}</h1>
           <p>{product.description}</p>
+          <p><strong>Category:</strong> {product.category}</p>
           <p><strong>Count:</strong> {product.count}</p>
           <a href={product.manualUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary">View Manual</a>
           <hr />

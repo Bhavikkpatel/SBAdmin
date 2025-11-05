@@ -27,11 +27,12 @@ const SparePartDetails = ({ companyId, productId, sparePartId }) => {
     <div>
       <div className="spare-part-details-container">
         <div className="spare-part-image-gallery">
-          <img src={sparePart.thumbNailUrl} alt={sparePart.id} className="spare-part-main-image" />
+          <img src={sparePart.thumbNailUrl} alt={sparePart.modelId} className="spare-part-main-image" />
         </div>
         <div className="spare-part-info">
-          <h1>{sparePart.id}</h1>
+          <h1>{sparePart.modelId}</h1>
           <p>{sparePart.description}</p>
+          <p><strong>Category:</strong> {sparePart.category}</p>
           <a href={sparePart.manualUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary">View Manual</a>
           <hr />
         </div>

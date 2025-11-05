@@ -18,7 +18,7 @@ const SparePartsList = ({ companyId, productId }) => {
     const sparePartsCollection = collection(db, 'companies', companyId, 'products', productId, 'spareParts');
     const q = query(sparePartsCollection, where("isDeleted", "!=", true));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      setSpareParts(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+      setSpareParts(snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id })));
     });
 
     return () => unsubscribe();
@@ -34,10 +34,10 @@ const SparePartsList = ({ companyId, productId }) => {
 
       <div className="spare-parts-grid">
         {spareParts.map(sparePart => (
-          <div key={sparePart.id} className="spare-part-card">
-            <img src={sparePart.thumbNailUrl} alt={sparePart.id} className="spare-part-card-image" />
+          <div key={sparePart.docId} className="spare-part-card">
+            <img src={sparePart.thumbNailUrl} alt={sparePart.modelId} className="spare-part-card-image" />
             <div className="spare-part-card-body">
-              <h3 className="spare-part-card-title">{sparePart.id}</h3>
+              <h3 className="spare-part-card-title">{sparePart.modelId}</h3>
               <p className="spare-part-card-text">{sparePart.description}</p>
               <div className="spare-part-card-actions">
                 <button className="btn btn-edit" onClick={() => { setShowForm(true); setSelectedSparePart(sparePart); }}>Edit</button>
@@ -61,7 +61,7 @@ const SparePartsList = ({ companyId, productId }) => {
         <SparePartDetails
           companyId={companyId}
           productId={productId}
-          sparePartId={selectedSparePart?.id}
+          sparePartId={selectedSparePart?.docId}
         />
       </Modal>
     </div>

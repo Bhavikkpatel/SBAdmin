@@ -16,7 +16,7 @@ const ProductsList = ({ companyId }) => {
     setLoading(true);
     const q = query(collection(db, 'companies', companyId, 'products'), where("isDeleted", "!=", true));
     const unsub = onSnapshot(q, (snapshot) => {
-      setProducts(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+      setProducts(snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id })));
       setLoading(false);
     }, (error) => {
       console.error(`Error fetching products for company ${companyId}: `, error);
@@ -36,16 +36,17 @@ const ProductsList = ({ companyId }) => {
 
       {loading && <p>Loading products...</p>}
       
+      
       <div className="products-grid">
         {products.map(product => (
-          <div key={product.id} className="product-card">
-            <img src={product.thumbNailUrl} className="product-card-image" alt={product.id} />
+          <div key={product.docId} className="product-card">
+            <img src={product.thumbNailUrl} className="product-card-image" alt={product.modelId} />
             <div className="product-card-body">
-              <h5 className="product-card-title">{product.id}</h5>
+              <h5 className="product-card-title">{product.modelId}</h5>
               <p className="product-card-text">{product.description}</p>
               <div className="product-card-actions">
                 <button className="btn btn-secondary" onClick={() => { setShowForm(true); setSelectedProduct(product); }}>Edit</button>
-                <Link to={`/company/${companyId}/product/${product.id}`} className="btn btn-info">View</Link>
+                <Link to={`/company/${companyId}/product/${product.docId}`} className="btn btn-info">View</Link>
               </div>
             </div>
           </div>

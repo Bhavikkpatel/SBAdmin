@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { collection, setDoc, updateDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase/config';
 import './SparePartForm.css';
@@ -9,7 +9,8 @@ const SparePartForm = ({ sparePart, companyId, productId, setShowForm }) => {
   const [sparePartData, setSparePartData] = useState(() => {
     const initialData = {
       description: '',
-      id: '',
+      modelId: '',
+      category: '',
       ...sparePart,
     };
 
@@ -30,7 +31,7 @@ const SparePartForm = ({ sparePart, companyId, productId, setShowForm }) => {
 
   const handleDelete = async () => {
     if (sparePart) {
-      await updateDoc(doc(db, 'companies', companyId, 'products', productId, 'spareParts', sparePart.id), {
+      await updateDoc(doc(db, 'companies', companyId, 'products', productId, 'spareParts', sparePart.docId), {
         isDeleted: true,
       });
       setShowForm(false);
@@ -64,14 +65,9 @@ const SparePartForm = ({ sparePart, companyId, productId, setShowForm }) => {
     };
 
     if (sparePart) {
-      await updateDoc(doc(db, 'companies', companyId, 'products', productId, 'spareParts', sparePart.id), finalSparePartData);
+      await updateDoc(doc(db, 'companies', companyId, 'products', productId, 'spareParts', sparePart.docId), finalSparePartData);
     } else {
-      if (sparePartData.id) {
-        await setDoc(doc(db, 'companies', companyId, 'products', productId, 'spareParts', sparePartData.id), finalSparePartData);
-      } else {
-        alert("Spare Part ID is required.");
-        return;
-      }
+      await addDoc(collection(db, 'companies', companyId, 'products', productId, 'spareParts'), finalSparePartData);
     }
     } catch (error) {
       console.error("Error uploading file: ", error);
@@ -87,12 +83,16 @@ const SparePartForm = ({ sparePart, companyId, productId, setShowForm }) => {
       <fieldset disabled={loading}>
         <h2 className="form-title">{sparePart ? 'Edit Spare Part' : 'Add Spare Part'}</h2>
         <div className="form-group">
-          <label htmlFor="sparePartId">ID</label>
-          <input id="sparePartId" name="id" value={sparePartData.id} onChange={handleChange} placeholder="Enter spare part ID" className="form-control" />
+          <label htmlFor="modelId">Model ID</label>
+          <input id="modelId" name="modelId" value={sparePartData.modelId} onChange={handleChange} placeholder="Enter spare part model ID" className="form-control" />
         </div>
         <div className="form-group">
           <label htmlFor="sparePartDescription">Description</label>
           <textarea id="sparePartDescription" name="description" value={sparePartData.description} onChange={handleChange} placeholder="Enter spare part description" className="form-control" />
+        </div>
+        <div className="form-group">
+          <label htmlFor="sparePartCategory">Category</label>
+          <input id="sparePartCategory" name="category" value={sparePartData.category} onChange={handleChange} placeholder="Enter spare part category" className="form-control" />
         </div>
 
 
