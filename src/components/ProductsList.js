@@ -6,6 +6,9 @@ import ProductForm from './ProductForm';
 import Modal from './Modal';
 import './ProductsList.css';
 
+// Define the new root collection
+const TARGET_COLLECTION = 'products_staging';
+
 const ProductsList = ({ companyId }) => {
   const [products, setProducts] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -13,8 +16,16 @@ const ProductsList = ({ companyId }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!companyId) return;
+    
     setLoading(true);
-    const q = query(collection(db, 'companies', companyId, 'products'), where("isDeleted", "!=", true));
+    // CHANGED: Query root collection and filter by companyId
+    const q = query(
+      collection(db, TARGET_COLLECTION),
+      where("companyId", "==", companyId), // Filter by foreign key
+      where("isDeleted", "!=", true)
+    );
+
     const unsub = onSnapshot(q, (snapshot) => {
       setProducts(snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id })));
       setLoading(false);
@@ -31,16 +42,18 @@ const ProductsList = ({ companyId }) => {
     <div className="container mt-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>Products</h2>
+        {/* Optional: Visual cue for development */}
+        {/* <small className="text-muted ms-2">(Source: {TARGET_COLLECTION})</small> */}
         <button className="btn btn-primary" onClick={() => { setShowForm(true); setSelectedProduct(null); }}>Add Product</button>
       </div>
 
       {loading && <p>Loading products...</p>}
       
-      
       <div className="products-grid">
         {products.map(product => (
           <div key={product.docId} className="product-card">
-            <img src={product.thumbNailUrl} className="product-card-image" alt={product.modelId} />
+             {/* Added fallback for missing images */}
+            <img src={product.thumbNailUrl || 'placeholder-image.jpg'} className="product-card-image" alt={product.modelId} />
             <div className="product-card-body">
               <h5 className="product-card-title">{product.modelId}</h5>
               <p className="product-card-text">{product.description}</p>

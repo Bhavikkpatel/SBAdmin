@@ -3,13 +3,13 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCiuHMmsJ9gNU1u3jhlhITNNpbiW7yGQmU",
-  authDomain: "synergyglobals-412ae.firebaseapp.com",
-  projectId: "synergyglobals-412ae",
-  storageBucket: "synergyglobals-412ae.firebasestorage.app",
-  messagingSenderId: "89835035430",
-  appId: "1:89835035430:web:0ff91d513646e7ad8f3fe7",
-  measurementId: "G-2YGGB0S8YL"
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID,
+  measurementId: process.env.REACT_APP_MEASUREMENT_ID
 };
 
 const app = initializeApp(firebaseConfig);

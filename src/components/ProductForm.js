@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
-import { collection, addDoc, updateDoc, doc } from 'firebase/firestore';
+// Added serverTimestamp for better tracking
+import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase/config';
 import './Form.css';
+
+// Define the new root collection
+const TARGET_COLLECTION = 'products_staging';
 
 const ProductForm = ({ product, companyId, setShowForm }) => {
   const [initialProductData] = useState(product || {
@@ -57,12 +61,25 @@ const ProductForm = ({ product, companyId, setShowForm }) => {
     }));
   };
 
+  // --- UPDATED DELETE HANDLER ---
   const handleDelete = async () => {
-    if (product) {
-      await updateDoc(doc(db, 'companies', companyId, 'products', product.docId), {
-        isDeleted: true,
-      });
-      setShowForm(false);
+    if (product && product.docId) {
+        if (!window.confirm("Are you sure you want to delete this product?")) return;
+
+        try {
+            setLoading(true);
+            // CHANGED: Soft delete in the root collection
+            await updateDoc(doc(db, TARGET_COLLECTION, product.docId), {
+                isDeleted: true,
+                updatedAt: serverTimestamp()
+            });
+            setShowForm(false);
+        } catch (error) {
+            console.error("Error deleting product: ", error);
+            alert("Delete failed. Please try again.");
+        } finally {
+            setLoading(false);
+        }
     }
   };
 
@@ -71,16 +88,18 @@ const ProductForm = ({ product, companyId, setShowForm }) => {
     setLoading(true);
     let manualUrl = product ? product.manualUrl : '';
     let thumbNailUrl = product ? product.thumbNailUrl : '';
-    console.log(product);
+
     try {
-      const productId = product ? product.docId : doc(collection(db, 'temp')).id;
-      if (manual && manual.name) {
+      // Use existing ID or generate a temporary one for storage paths
+      const productId = product ? product.docId : Date.now().toString();
+      
+      if (manual) {
         const storageRef = ref(storage, `manuals/${productId}/${manual.name}`);
         await uploadBytes(storageRef, manual);
         manualUrl = await getDownloadURL(storageRef);
       }
 
-      if (thumbnail && thumbnail.name) {
+      if (thumbnail) {
         const storageRef = ref(storage, `thumbnails/${productId}/${thumbnail.name}`);
         await uploadBytes(storageRef, thumbnail);
         thumbNailUrl = await getDownloadURL(storageRef);
@@ -99,24 +118,23 @@ const ProductForm = ({ product, companyId, setShowForm }) => {
         manualUrl,
         thumbNailUrl,
         isDeleted: false,
+        updatedAt: serverTimestamp(),
       };
 
-      if (product) {
-        const updatedFields = {};
-        for (const key in finalProductData) {
-          if (finalProductData[key] !== initialProductData[key]) {
-            updatedFields[key] = finalProductData[key];
-          }
-        }
-        if (Object.keys(updatedFields).length > 0) {
-          await updateDoc(doc(db, 'companies', companyId, 'products', product.docId), updatedFields);
-        }
+      if (product && product.docId) {
+         // CHANGED: Update existing document in root collection
+         await updateDoc(doc(db, TARGET_COLLECTION, product.docId), finalProductData);
       } else {
-        await addDoc(collection(db, 'companies', companyId, 'products'), finalProductData);
+        // CHANGED: Add new document to root collection with FOREIGN KEY
+        await addDoc(collection(db, TARGET_COLLECTION), {
+            ...finalProductData,
+            companyId: companyId, // MUST INCLUDE THIS
+            createdAt: serverTimestamp()
+        });
       }
     } catch (error) {
-      console.error("Error uploading file: ", error);
-      alert("File upload failed. Please try again.");
+      console.error("Error saving product: ", error);
+      alert("Save failed. Please try again.");
     } finally {
       setLoading(false);
       setShowForm(false);
@@ -127,7 +145,7 @@ const ProductForm = ({ product, companyId, setShowForm }) => {
     <form onSubmit={handleSubmit} className="form-container">
       <fieldset disabled={loading}>
         <h2 className="form-title">{product ? 'Edit Product' : 'Add Product'}</h2>
-        {/* ... other form groups ... */}
+        
         <div className="form-group">
           <label htmlFor="modelId">Model ID</label>
           <input id="modelId" name="modelId" value={productData.modelId} onChange={handleChange} placeholder="Enter product model ID" className="form-control" required />
@@ -172,27 +190,32 @@ const ProductForm = ({ product, companyId, setShowForm }) => {
         <button type="button" className="btn btn-secondary mt-2" onClick={addSpecification}>Add Specification</button>
 
         <h5 className="mt-4">Files</h5>
-        
-        {/* THIS IS THE KEY CHANGE */}
         <div className="form-row">
           <div className="form-group col">
             <label>Manual PDF</label>
             <input type="file" onChange={(e) => setManual(e.target.files[0])} className="form-control-file" accept="application/pdf,.pdf" />
+            {productData.manualUrl && !manual && <small><a href={productData.manualUrl} target="_blank" rel="noopener noreferrer">Current Manual</a></small>}
           </div>
           <div className="form-group col">
             <label>Thumbnail Image</label>
             <input type="file" onChange={(e) => setThumbnail(e.target.files[0])} className="form-control-file" accept="image/*" />
+            {productData.thumbNailUrl && !thumbnail && <img src={productData.thumbNailUrl} alt="Thumbnail" style={{height: '50px', marginTop: '5px'}}/>}
           </div>
         </div>
 
-        <button type="submit" className="btn btn-primary mt-4">
-          {loading ? 'Loading...' : (product ? 'Save Product' : 'Add Product')}
-        </button>
-        {product && (
-          <button type="button" className="btn btn-danger mt-4" onClick={handleDelete}>
-            Delete
-          </button>
-        )}
+        <div className="button-group mt-4">
+            <button type="submit" className="btn btn-primary">
+            {loading ? 'Saving...' : (product ? 'Save Product' : 'Add Product')}
+            </button>
+            {product && (
+            <button type="button" className="btn btn-danger" onClick={handleDelete} disabled={loading}>
+                Delete
+            </button>
+            )}
+             <button type="button" className="btn btn-secondary" onClick={() => setShowForm(false)} disabled={loading}>
+                Cancel
+            </button>
+        </div>
       </fieldset>
     </form>
   );
