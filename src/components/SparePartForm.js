@@ -105,9 +105,6 @@ const SparePartForm = ({ sparePart, companyId, productId, setShowForm }) => {
     <form onSubmit={handleSubmit} className="form-container">
       <fieldset disabled={loading}>
         <h2 className="form-title">{sparePart ? 'Edit Spare Part' : 'Add Spare Part'}</h2>
-        {/* Added small visual cue for which collection is being used */}
-        {/* <small style={{ color: 'gray' }}>Saving to: {TARGET_COLLECTION}</small> */}
-        
         <div className="form-group">
           <label htmlFor="modelId">Model ID</label>
           <input id="modelId" name="modelId" value={sparePartData.modelId} onChange={handleChange} placeholder="Enter spare part model ID" className="form-control" required />

@@ -4,54 +4,80 @@ import { db } from '../firebase/config';
 import SparePartsList from './SparePartsList';
 import './ProductDetails.css';
 
+// CHANGED: Define target collection for products
+const PRODUCTS_COLLECTION = 'products_staging';
+
 const ProductDetails = ({ companyId, productId }) => {
   const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchProduct = async () => {
-      const docRef = doc(db, 'companies', companyId, 'products', productId);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        setProduct(docSnap.data());
+      try {
+        // CHANGED: Fetch from root collection using just productId
+        const docRef = doc(db, PRODUCTS_COLLECTION, productId);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          setProduct(docSnap.data());
+        } else {
+            console.log("No such product!");
+        }
+      } catch (error) {
+        console.error("Error fetching product:", error);
+      } finally {
+        setLoading(false);
       }
     };
-    if (companyId && productId) {
+
+    if (productId) {
       fetchProduct();
     }
-  }, [companyId, productId]);
+  }, [productId]); // Removed companyId dependency as it's not needed for root lookup
 
-  if (!product) {
-    return <div>Loading...</div>;
-  }
+  if (loading) return <div>Loading...</div>;
+  if (!product) return <div>Product not found.</div>;
 
   return (
     <div>
       <div className="product-details-container">
         <div className="product-image-gallery">
-          {/* Thumbnail gallery can be added here */}
-          <img src={product.thumbNailUrl} alt={product.modelId} className="product-main-image" />
+           {/* Added fallback for missing images */}
+          <img src={product.thumbNailUrl || 'placeholder.jpg'} alt={product.modelId} className="product-main-image" />
         </div>
         <div className="product-info">
           <h1>{product.modelId}</h1>
           <p>{product.description}</p>
           <p><strong>Category:</strong> {product.category}</p>
-          <p><strong>Count:</strong> {product.count}</p>
-          <a href={product.manualUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary">View Manual</a>
+          {/* Count might not exist on all products, conditional render is safer */}
+          {product.count !== undefined && <p><strong>Count:</strong> {product.count}</p>}
+          
+          {/* CHANGED: Updated button class for specific styling */}
+          {product.manualUrl ? (
+             <a href={product.manualUrl} target="_blank" rel="noopener noreferrer" className="btn-view-manual">
+               View Manual
+             </a>
+          ) : (
+             <span className="text-muted">No manual available</span>
+          )}
+
           <hr />
           <h3>Specifications</h3>
           <ul className="list-group">
-            {product.specifications ? (
+            {product.specifications && Object.keys(product.specifications).length > 0 ? (
               Object.entries(product.specifications).map(([key, value]) => (
                 <li key={key} className="list-group-item">
                   <strong>{key}:</strong> {value}
                 </li>
               ))
             ) : (
-              <p>No specifications found.</p>
+              <p className="text-muted">No specifications found.</p>
             )}
           </ul>
         </div>
       </div>
+      {/* companyId might still be needed here depending on how SparePartsList uses it internally, 
+          though we updated it to primarily use productId. keeping it safe. */}
       <SparePartsList companyId={companyId} productId={productId} />
     </div>
   );

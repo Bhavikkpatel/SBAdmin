@@ -2,6 +2,8 @@
   display: flex;
   gap: 2rem;
   margin-top: 1rem;
+  font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  color: #333;
 }
 
 .product-image-gallery {
@@ -16,11 +18,91 @@
   max-width: 100%;
   height: auto;
   object-fit: contain;
-  border: 1px solid #ddd;
-  border-radius: 5px;
+  border: 1px solid #e1e4e8;
+  border-radius: 12px;
   aspect-ratio: 1 / 1;
+  padding: 1rem;
+  background-color: #f8f9fa;
 }
 
 .product-info {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.product-info h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-top: 0;
+}
+
+/* --- NEW OUTLINED BUTTON STYLE --- */
+/* Matches exactly with .spare-part-card-actions button */
+.btn-view-manual {
+  display: inline-flex;       /* Better for alignment than inline-block */
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  margin-top: 1rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;          /* Standardized font size */
+  text-decoration: none;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+
+  /* Blue Outlined Theme */
+  background-color: transparent;
+  color: #007bff;
+  border: 2px solid #007bff;
+}
+
+.btn-view-manual:hover {
+  background-color: #e3f2fd;
+  color: #0056b3;
+  text-decoration: none;
+  transform: translateY(-1px); /* Subtle lift effect on hover */
+}
+
+/* Utility for missing data */
+.text-muted {
+    color: #6c757d;
+    font-style: italic;
+    margin-top: 1rem;
+}
+
+hr {
+    margin: 2rem 0;
+    border: 0;
+    border-top: 1px solid #e1e4e8;
+}
+
+/* --- SPECIFICATIONS LIST --- */
+.list-group {
+  padding: 0;
+  list-style: none;
+  margin-top: 1rem;
+  border: 1px solid #e1e4e8;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.list-group-item {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e1e4e8;
+  display: flex;
+  justify-content: space-between;
+}
+
+.list-group-item:last-child {
+  border-bottom: none;
+}
+
+.list-group-item:nth-child(odd) {
+  background-color: #f8f9fa;
 }

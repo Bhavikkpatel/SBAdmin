@@ -44,7 +44,7 @@ const ProductsList = ({ companyId }) => {
         <h2>Products</h2>
         {/* Optional: Visual cue for development */}
         {/* <small className="text-muted ms-2">(Source: {TARGET_COLLECTION})</small> */}
-        <button className="btn btn-primary" onClick={() => { setShowForm(true); setSelectedProduct(null); }}>Add Product</button>
+        <button className="btn btn-add-outlined" onClick={() => { setShowForm(true); setSelectedProduct(null); }}>Add Product</button>
       </div>
 
       {loading && <p>Loading products...</p>}
@@ -52,8 +52,7 @@ const ProductsList = ({ companyId }) => {
       <div className="products-grid">
         {products.map(product => (
           <div key={product.docId} className="product-card">
-             {/* Added fallback for missing images */}
-            <img src={product.thumbNailUrl || 'placeholder-image.jpg'} className="product-card-image" alt={product.modelId} />
+            {/* <img src={product.thumbNailUrl || 'placeholder-image.jpg'} className="product-card-image" alt={product.modelId} /> */}
             <div className="product-card-body">
               <h5 className="product-card-title">{product.modelId}</h5>
               <p className="product-card-text">{product.description}</p>

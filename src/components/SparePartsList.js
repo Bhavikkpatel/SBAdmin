@@ -38,13 +38,13 @@ const SparePartsList = ({ companyId, productId }) => {
       <div className="header">
         <h2>Spare Parts</h2>
         {/* <small style={{ color: 'gray', marginLeft: '10px' }}>Source: {TARGET_COLLECTION}</small> */}
-        <button className="btn btn-primary" onClick={() => { setShowForm(true); setSelectedSparePart(null); }}>Add Spare Part</button>
+        <button className="btn btn-add-outlined" onClick={() => { setShowForm(true); setSelectedSparePart(null); }}>Add Spare Part</button>
       </div>
 
       <div className="spare-parts-grid">
         {spareParts.map(sparePart => (
           <div key={sparePart.docId} className="spare-part-card">
-            <img src={sparePart.thumbNailUrl || 'placeholder-image-url.jpg'} alt={sparePart.modelId} className="spare-part-card-image" />
+            {/* <img src={sparePart.thumbNailUrl || 'placeholder-image-url.jpg'} alt={sparePart.modelId} className="spare-part-card-image" /> */}
             <div className="spare-part-card-body">
               <h3 className="spare-part-card-title">{sparePart.modelId}</h3>
               <p className="spare-part-card-text">{sparePart.description}</p>

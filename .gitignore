@@ -21,6 +21,7 @@ yarn-debug.log*
 yarn-error.log*
 .idea/
 .vscode/
+.firebase
 
 # Logs
 logs/
@@ -39,3 +40,5 @@ Thumbs.db
 *.sublime-project
 *.sublime-workspace
 .vscode/
+
+src/serviceAccountKey.json

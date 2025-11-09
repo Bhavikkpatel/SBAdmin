@@ -9,38 +9,61 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  backdrop-filter: blur(5px); /* Optional: adds a nice blur effect to background */
 }
 
 .modal-content {
   background-color: #fff;
   padding: 2rem;
-  border-radius: 10px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  width: 80%;
-  max-width: 900px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 600px; /* Slightly narrower for better readability */
   position: relative;
   max-height: 90vh;
   overflow-y: auto;
+  animation: modalSlideIn 0.3s ease;
 }
 
-.modal-content::-webkit-scrollbar {
-  display: none;
+@keyframes modalSlideIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
+/* --- NEW CLOSE BUTTON STYLE --- */
 .modal-close-btn {
-  position: fixed;
-  top: 1.5rem;
-  right: 1.5rem;
-  background: #000;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
-  z-index: 1010;
-  color: #fff;
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  color: #999;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 1;
+}
+
+.modal-close-btn:hover {
+  background-color: #f0f2f5;
+  color: #333;
+  transform: rotate(90deg);
+}
+
+/* Hide scrollbar but keep functionality */
+.modal-content::-webkit-scrollbar {
+  width: 8px;
+}
+.modal-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.modal-content::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
 }
