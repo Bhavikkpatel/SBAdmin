@@ -18,7 +18,7 @@
   border-radius: 12px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   width: 90%;
-  max-width: 600px; /* Slightly narrower for better readability */
+  max-width: 600px;
   position: relative;
   max-height: 90vh;
   overflow-y: auto;
@@ -30,33 +30,41 @@
   to { transform: translateY(0); opacity: 1; }
 }
 
-/* --- NEW CLOSE BUTTON STYLE --- */
 .modal-close-btn {
   position: absolute;
   top: 1rem;
   right: 1rem;
   background: transparent;
   border: none;
-  font-size: 1.5rem;
   cursor: pointer;
   color: #999;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
   z-index: 1;
 }
 
 .modal-close-btn:hover {
   background-color: #f0f2f5;
-  color: #333;
-  transform: rotate(90deg);
 }
 
-/* Hide scrollbar but keep functionality */
+.close-icon {
+  width: 10px;
+  height: 10px;
+  display: block;
+  object-fit: contain;
+  filter: grayscale(100%) brightness(1.5);
+  transition: filter 0.2s ease;
+}
+
+.modal-close-btn:hover .close-icon {
+  filter: grayscale(0%) brightness(1);
+}
+
 .modal-content::-webkit-scrollbar {
   width: 8px;
 }

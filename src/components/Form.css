@@ -127,6 +127,7 @@ textarea.form-control {
 .btn-secondary:hover:not(:disabled) {
   background-color: #e2e6ea;
   border-color: #dae0e5 !important;
+  color: #000000;
 }
 
 /* Specific: Delete button in main action group pushes to the left */

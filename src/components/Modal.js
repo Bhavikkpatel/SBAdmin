@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
 import './Modal.css';
+// You don't need to import the image directly in JS if it's in the public folder.
+// Just reference its public path.
 
 const Modal = ({ isOpen, onClose, children }) => {
-  // Close on ESC key
   useEffect(() => {
     const handleEsc = (e) => {
       if (e.key === 'Escape') onClose();
@@ -14,10 +15,10 @@ const Modal = ({ isOpen, onClose, children }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay">
+      <div className="modal-content">
         <button className="modal-close-btn" onClick={onClose} aria-label="Close modal">
-          &times;
+          <img src="/icons/close.png" alt="Close" className="close-icon" />
         </button>
         {children}
       </div>
