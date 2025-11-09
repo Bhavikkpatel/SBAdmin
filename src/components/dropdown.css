@@ -1,0 +1,140 @@
+/* src/components/Dropdown.css */
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-toggle-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px; /* Give it some click area */
+  border-radius: 6px;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #667085; /* Default icon color */
+}
+
+.dropdown-toggle-button:hover {
+  background-color: #f2f4f7;
+  color: #1d2939; /* Darker on hover */
+}
+
+.dropdown-toggle-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(68, 126, 242, 0.2); /* Focus ring */
+}
+
+.dots-icon {
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+  filter: grayscale(100%) brightness(50%); /* Adjust if your icon is not already monochrome */
+  transition: filter 0.2s;
+  pointer-events: none;
+}
+
+.dropdown-toggle-button:hover .dots-icon {
+    filter: none; /* Remove filter on hover if you want original icon color */
+}
+
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%; /* Position below the button */
+  left: 0;
+  min-width: 160px;
+  background-color: #fff;
+  border: 1px solid #eaecf0;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  z-index: 1000; /* Ensure it's on top */
+  padding: 8px 0;
+  margin-top: 8px; /* Space between button and menu */
+}
+
+.dropdown-menu.align-right {
+  left: auto;
+  right: 0;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  color: #344054;
+  font-size: 0.875rem;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.dropdown-item:hover {
+  background-color: #f9fafb;
+  color: #101828;
+}
+
+.dropdown-item.danger {
+  color: #d92d20;
+}
+
+.dropdown-item.danger:hover {
+  background-color: #fef3f2;
+}
+
+/* Optional: Icon styling within dropdown items if you add them */
+.dropdown-item svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+}
+
+.dropdown-menu-portal {
+    /* 'position: fixed' and top/bottom/left/right set inline by JS */
+    min-width: 160px;
+    background-color: #fff;
+    border: 1px solid #eaecf0;
+    border-radius: 8px;
+    box-shadow: 0 12px 16px -4px rgba(16, 24, 40, 0.08), 0 4px 6px -2px rgba(16, 24, 40, 0.03);
+    padding: 4px;
+    /* Updated animation that works for both opening directions */
+    animation: dropdownScaleIn 0.15s ease-out;
+}
+
+@keyframes dropdownScaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.dropdown-menu-portal .dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  color: #344054;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.dropdown-menu-portal .dropdown-item:hover {
+  background-color: #f9fafb;
+}
+
+.dropdown-menu-portal .dropdown-item.danger {
+  color: #b42318;
+}
+
+.dropdown-menu-portal .dropdown-item.danger:hover {
+  background-color: #fef3f2;
+  color: #d92d20;
+}

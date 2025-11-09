@@ -1,3 +1,4 @@
+/* --- DESKTOP LAYOUT (Default) --- */
 .product-details-container {
   display: flex;
   gap: 2rem;
@@ -8,14 +9,16 @@
 
 .product-image-gallery {
   flex: 1;
+  /* Center image in its flex column */
   display: flex;
   flex-direction: column;
   align-items: center;
+  max-width: 50%; /* Ensure image doesn't take over on large screens */
 }
 
 .product-main-image {
   width: 100%;
-  max-width: 100%;
+  max-width: 400px; /* Cap image size on desktop */
   height: auto;
   object-fit: contain;
   border: 1px solid #e1e4e8;
@@ -26,7 +29,7 @@
 }
 
 .product-info {
-  flex: 1;
+  flex: 1.5; /* Give text slightly more room on desktop */
   display: flex;
   flex-direction: column;
 }
@@ -36,27 +39,25 @@
   font-weight: 700;
   color: #1a1a1a;
   margin-top: 0;
+  line-height: 1.2;
 }
 
-/* --- NEW OUTLINED BUTTON STYLE --- */
-/* Matches exactly with .spare-part-card-actions button */
+/* ... (keep btn-view-manual, text-muted, hr styles same as before) ... */
 .btn-view-manual {
-  display: inline-flex;       /* Better for alignment than inline-block */
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   width: fit-content;
-  margin-top: 1rem;
+  margin-top: 1.5rem;
   padding: 0.6rem 1.2rem;
   border-radius: 6px;
   font-weight: 600;
-  font-size: 0.9rem;          /* Standardized font size */
+  font-size: 0.9rem;
   text-decoration: none;
   transition: all 0.2s ease;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   cursor: pointer;
-
-  /* Blue Outlined Theme */
   background-color: transparent;
   color: #007bff;
   border: 2px solid #007bff;
@@ -66,21 +67,11 @@
   background-color: #e3f2fd;
   color: #0056b3;
   text-decoration: none;
-  transform: translateY(-1px); /* Subtle lift effect on hover */
+  transform: translateY(-1px);
 }
 
-/* Utility for missing data */
-.text-muted {
-    color: #6c757d;
-    font-style: italic;
-    margin-top: 1rem;
-}
-
-hr {
-    margin: 2rem 0;
-    border: 0;
-    border-top: 1px solid #e1e4e8;
-}
+.text-muted { color: #6c757d; font-style: italic; margin-top: 1rem; }
+hr { margin: 2rem 0; border: 0; border-top: 1px solid #e1e4e8; }
 
 /* --- SPECIFICATIONS LIST --- */
 .list-group {
@@ -98,11 +89,44 @@ hr {
   display: flex;
   justify-content: space-between;
 }
+.list-group-item:last-child { border-bottom: none; }
+.list-group-item:nth-child(odd) { background-color: #f8f9fa; }
 
-.list-group-item:last-child {
-  border-bottom: none;
-}
 
-.list-group-item:nth-child(odd) {
-  background-color: #f8f9fa;
+/* =========================================
+   MOBILE RESPONSIVE LAYOUT (Max 768px)
+========================================= */
+@media (max-width: 768px) {
+    .product-details-container {
+        flex-direction: column;
+        gap: 1.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .product-image-gallery {
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .product-main-image {
+        max-width: 100%;
+        height: auto;
+        max-height: 300px;
+    }
+
+    .product-info h1 {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .btn-view-manual {
+        width: 100%;
+        margin-top: 1rem;
+        padding: 0.8rem;
+    }
+
+    .list-group-item {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.9rem;
+    }
 }

@@ -8,7 +8,8 @@ const Company = () => {
   const { id } = useParams();
 
   return (
-    <div className="container mt-4">
+    // CHANGED: p-0 for mobile, p-md-4 for medium screens and up
+    <div className="container-fluid p-0 p-md-4">
       <Breadcrumb />
       <CompanyDetails companyId={id} />
       <ProductsList companyId={id} />

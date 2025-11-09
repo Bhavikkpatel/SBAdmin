@@ -7,7 +7,7 @@ const Product = () => {
   const { companyId, productId } = useParams();
 
   return (
-    <div className="container mt-4">
+    <div className="container">
       <Breadcrumb />
       <ProductDetails companyId={companyId} productId={productId} />
     </div>

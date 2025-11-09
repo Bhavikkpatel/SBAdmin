@@ -8,7 +8,7 @@ import './App.css';
 function App() {
   return (
     <Router>
-      <div className="container">
+      <div className="container-fluid">
         <Routes>
           <Route path="/" element={<Companies />} />
           <Route path="/company/:id" element={<Company />} />

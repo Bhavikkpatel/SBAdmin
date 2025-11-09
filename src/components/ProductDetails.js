@@ -76,8 +76,6 @@ const ProductDetails = ({ companyId, productId }) => {
           </ul>
         </div>
       </div>
-      {/* companyId might still be needed here depending on how SparePartsList uses it internally, 
-          though we updated it to primarily use productId. keeping it safe. */}
       <SparePartsList companyId={companyId} productId={productId} />
     </div>
   );

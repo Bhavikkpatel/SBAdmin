@@ -1,30 +1,17 @@
 import React, { useState } from "react";
-import {
-  collection,
-  addDoc,
-  updateDoc,
-  doc,
-  serverTimestamp,
-} from "firebase/firestore";
+import { collection, addDoc, updateDoc, doc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../firebase/config";
-import "./Form.css";
+import { useData } from '../context/DataContext'; // Import Context Hook
 import { checkIfModelExists } from '../helper.js';
+import "./Form.css";
 
 const TARGET_COLLECTION = "products_staging";
 
 const ProductForm = ({ product, companyId, setShowForm }) => {
-  const [initialProductData] = useState(
-    product || {
-      description: "",
-      modelId: "",
-      specifications: [],
-      category: "",
-    }
-  );
+  const [initialProductData] = useState(product || { description: "", modelId: "", specifications: [], category: "" });
   const [productData, setProductData] = useState(() => {
     const data = { ...initialProductData };
-    // Ensure specifications is always an array of objects {key, value}
     if (data.specifications && typeof data.specifications === "object" && !Array.isArray(data.specifications)) {
       data.specifications = Object.entries(data.specifications).map(([key, value]) => ({ key, value }));
     } else if (!data.specifications) {
@@ -32,13 +19,14 @@ const ProductForm = ({ product, companyId, setShowForm }) => {
     }
     return data;
   });
-  
   const [manual, setManual] = useState(null);
   const [thumbnail, setThumbnail] = useState(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  
+  // Use Data Context to refresh cache
+  const { refreshProducts } = useData();
 
-  // --- FIELD VALIDATION ---
   const validateField = async (name, value) => {
     let error = null;
     if (name === 'modelId') {
@@ -50,11 +38,8 @@ const ProductForm = ({ product, companyId, setShowForm }) => {
                 if (exists) error = "This Model ID already exists.";
             }
         }
-    } else if (name === 'description' && !value.trim()) {
-        error = "Description is required.";
-    } else if (name === 'category' && !value.trim()) {
-        error = "Category is required.";
-    }
+    } else if (name === 'description' && !value.trim()) error = "Description is required.";
+    else if (name === 'category' && !value.trim()) error = "Category is required.";
     
     setErrors(prev => ({ ...prev, [name]: error }));
     return error;
@@ -63,44 +48,34 @@ const ProductForm = ({ product, companyId, setShowForm }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setProductData(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-        setErrors(prev => ({ ...prev, [name]: null }));
-    }
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }));
   };
 
   const handleBlur = async (e) => {
-    const { name, value } = e.target;
-    await validateField(name, value);
+    await validateField(e.target.name, e.target.value);
   };
 
-  // --- SPECIFICATION HANDLERS ---
   const handleSpecificationChange = (index, field, value) => {
     const newSpecifications = [...productData.specifications];
     newSpecifications[index][field] = value;
     setProductData((prevData) => ({ ...prevData, specifications: newSpecifications }));
-
-    // Clear error for this specific field when user types
     if (errors.specifications && errors.specifications[index]) {
          setErrors(prev => {
              const newSpecErrors = [...(prev.specifications || [])];
-             if (newSpecErrors[index]) {
-                  newSpecErrors[index] = { ...newSpecErrors[index], [field]: null };
-             }
+             if (newSpecErrors[index]) newSpecErrors[index] = { ...newSpecErrors[index], [field]: null };
              return { ...prev, specifications: newSpecErrors };
          });
     }
   };
 
   const addSpecification = () => {
-    setProductData((prevData) => ({ ...prevData, specifications: [...prevData.specifications, { key: "", value: "" }] }));
+    setProductData((prev) => ({ ...prev, specifications: [...prev.specifications, { key: "", value: "" }] }));
   };
 
   const removeSpecification = (index) => {
     const newSpecifications = [...productData.specifications];
     newSpecifications.splice(index, 1);
-    setProductData((prevData) => ({ ...prevData, specifications: newSpecifications }));
-    
-    // Also remove the corresponding error entry if it exists
+    setProductData((prev) => ({ ...prev, specifications: newSpecifications }));
     setErrors(prev => {
         if (!prev.specifications) return prev;
         const newSpecErrors = [...prev.specifications];
@@ -114,13 +89,11 @@ const ProductForm = ({ product, companyId, setShowForm }) => {
       if (!window.confirm("Are you sure you want to delete this product?")) return;
       try {
         setLoading(true);
-        await updateDoc(doc(db, TARGET_COLLECTION, product.docId), {
-          isDeleted: true,
-          updatedAt: serverTimestamp(),
-        });
+        await updateDoc(doc(db, TARGET_COLLECTION, product.docId), { isDeleted: true, updatedAt: serverTimestamp() });
+        await refreshProducts(companyId); // REFRESH CACHE
         setShowForm(false);
       } catch (error) {
-        console.error("Error deleting product: ", error);
+        console.error("Error deleting: ", error);
         setErrors(prev => ({ ...prev, form: "Delete failed. Please try again." }));
       } finally {
         setLoading(false);
@@ -130,13 +103,10 @@ const ProductForm = ({ product, companyId, setShowForm }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // 1. Validate main fields
     const modelIdError = await validateField('modelId', productData.modelId);
     const descError = await validateField('description', productData.description);
     const catError = await validateField('category', productData.category);
 
-    // 2. Validate Specifications
     let hasSpecErrors = false;
     const specErrors = productData.specifications.map(spec => {
         const keyError = spec.key.trim() ? null : "Name required";
@@ -151,32 +121,34 @@ const ProductForm = ({ product, companyId, setShowForm }) => {
     }
 
     setLoading(true);
-    // ... (rest of the submit logic matches previous version)
-    let manualUrl = product ? product.manualUrl : "";
-    let thumbNailUrl = product ? product.thumbNailUrl : "";
+    const trimmedData = {};
+    for (const key in productData) {
+        trimmedData[key] = typeof productData[key] === 'string' ? productData[key].trim() : productData[key];
+    }
 
     try {
-      const productId = product ? product.docId : Date.now().toString();
+      let manualUrl = product ? product.manualUrl : "";
+      let thumbNailUrl = product ? product.thumbNailUrl : "";
+      const pid = product ? product.docId : Date.now().toString();
 
       if (manual) {
-        const storageRef = ref(storage, `manuals/${productId}/${manual.name}`);
+        const storageRef = ref(storage, `manuals/${pid}/${manual.name}`);
         await uploadBytes(storageRef, manual);
         manualUrl = await getDownloadURL(storageRef);
       }
-
       if (thumbnail) {
-        const storageRef = ref(storage, `thumbnails/${productId}/${thumbnail.name}`);
+        const storageRef = ref(storage, `thumbnails/${pid}/${thumbnail.name}`);
         await uploadBytes(storageRef, thumbnail);
         thumbNailUrl = await getDownloadURL(storageRef);
       }
 
       const specificationsMap = productData.specifications.reduce((acc, spec) => {
-          if (spec.key) acc[spec.key] = spec.value;
+          if (spec.key.trim()) acc[spec.key.trim()] = spec.value.trim();
           return acc;
-        }, {});
+      }, {});
 
-      const finalProductData = {
-        ...productData,
+      const finalData = {
+        ...trimmedData,
         specifications: specificationsMap,
         manualUrl,
         thumbNailUrl,
@@ -185,18 +157,15 @@ const ProductForm = ({ product, companyId, setShowForm }) => {
       };
 
       if (product && product.docId) {
-        await updateDoc(doc(db, TARGET_COLLECTION, product.docId), finalProductData);
+        await updateDoc(doc(db, TARGET_COLLECTION, product.docId), finalData);
       } else {
-        await addDoc(collection(db, TARGET_COLLECTION), {
-          ...finalProductData,
-          companyId: companyId,
-          createdAt: serverTimestamp(),
-        });
+        await addDoc(collection(db, TARGET_COLLECTION), { ...finalData, companyId, createdAt: serverTimestamp() });
       }
+      await refreshProducts(companyId); // REFRESH CACHE
       setShowForm(false);
     } catch (error) {
-      console.error("Error saving product: ", error);
-      setErrors(prev => ({ ...prev, form: "Failed to save product. Please try again." }));
+      console.error("Error saving: ", error);
+      setErrors(prev => ({ ...prev, form: "Save failed. Please try again." }));
     } finally {
       setLoading(false);
     }
@@ -206,91 +175,42 @@ const ProductForm = ({ product, companyId, setShowForm }) => {
     <form onSubmit={handleSubmit} className="form-container">
       <fieldset disabled={loading}>
         <h2 className="form-title">{product ? "Edit Product" : "Add Product"}</h2>
-
         {errors.form && <div className="alert alert-danger">{errors.form}</div>}
-
         <div className="form-group">
           <label htmlFor="modelId">Model ID</label>
-          <input
-            id="modelId"
-            name="modelId"
-            value={productData.modelId}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            placeholder="Enter product model ID"
-            className={`form-control ${errors.modelId ? 'is-invalid' : ''}`}
-            required
-          />
+          <input id="modelId" name="modelId" value={productData.modelId} onChange={handleChange} onBlur={handleBlur} placeholder="Enter product model ID" className={`form-control ${errors.modelId ? 'is-invalid' : ''}`} required />
           {errors.modelId && <div className="invalid-feedback">{errors.modelId}</div>}
         </div>
-
         <div className="form-group">
           <label htmlFor="productDescription">Description</label>
-          <textarea
-            id="productDescription"
-            name="description"
-            value={productData.description}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            placeholder="Enter product description"
-            className={`form-control ${errors.description ? 'is-invalid' : ''}`}
-            required
-          />
+          <textarea id="productDescription" name="description" value={productData.description} onChange={handleChange} onBlur={handleBlur} placeholder="Enter product description" className={`form-control ${errors.description ? 'is-invalid' : ''}`} required />
           {errors.description && <div className="invalid-feedback">{errors.description}</div>}
         </div>
-
         <div className="form-group">
           <label htmlFor="productCategory">Category</label>
-          <input
-            id="productCategory"
-            name="category"
-            value={productData.category}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            placeholder="Enter product category"
-            className={`form-control ${errors.category ? 'is-invalid' : ''}`}
-            required
-          />
+          <input id="productCategory" name="category" value={productData.category} onChange={handleChange} onBlur={handleBlur} placeholder="Enter product category" className={`form-control ${errors.category ? 'is-invalid' : ''}`} required />
           {errors.category && <div className="invalid-feedback">{errors.category}</div>}
         </div>
 
         <h5 className="mt-4">Specifications</h5>
         <div className="specifications-container">
           {productData.specifications.length > 0 && (
-            <div className="spec-header">
-              <span>Name</span><span>Value</span><span></span>
-            </div>
+            <div className="spec-header"><span>Name</span><span>Value</span><span></span></div>
           )}
           {productData.specifications.map((spec, index) => {
-             // Helper to get error for current spec row
              const specError = errors.specifications && errors.specifications[index];
-             
              return (
                 <div className="spec-row" key={index}>
                   <div className="spec-input-group">
-                    <input 
-                        type="text" 
-                        value={spec.key} 
-                        onChange={(e) => handleSpecificationChange(index, "key", e.target.value)} 
-                        placeholder="e.g., Weight" 
-                        className={`form-control spec-input ${specError?.key ? 'is-invalid' : ''}`}
-                    />
+                    <input type="text" value={spec.key} onChange={(e) => handleSpecificationChange(index, "key", e.target.value)} placeholder="e.g., Weight" className={`form-control spec-input ${specError?.key ? 'is-invalid' : ''}`} />
                     {specError?.key && <div className="invalid-feedback">{specError.key}</div>}
                   </div>
                   <div className="spec-input-group">
-                    <input 
-                        type="text" 
-                        value={spec.value} 
-                        onChange={(e) => handleSpecificationChange(index, "value", e.target.value)} 
-                        placeholder="e.g., 50 lbs" 
-                        className={`form-control spec-input ${specError?.value ? 'is-invalid' : ''}`}
-                    />
+                    <input type="text" value={spec.value} onChange={(e) => handleSpecificationChange(index, "value", e.target.value)} placeholder="e.g., 50 lbs" className={`form-control spec-input ${specError?.value ? 'is-invalid' : ''}`} />
                     {specError?.value && <div className="invalid-feedback">{specError.value}</div>}
                   </div>
                   <div className="spec-action">
-                    <button type="button" className="btn-icon-danger" onClick={() => removeSpecification(index)} title="Remove specification">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                    </button>
+                    <button type="button" className="btn-icon-danger" onClick={() => removeSpecification(index)} title="Remove"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
                   </div>
                 </div>
              );
@@ -299,7 +219,6 @@ const ProductForm = ({ product, companyId, setShowForm }) => {
         </div>
         <button type="button" className="btn btn-secondary btn-sm mt-3" onClick={addSpecification}>+ Add Specification</button>
 
-        {/* ... Files section and Button group remain the same ... */}
         <h5 className="mt-4">Files</h5>
         <div className="form-row">
           <div className="form-group col">
@@ -315,17 +234,12 @@ const ProductForm = ({ product, companyId, setShowForm }) => {
         </div>
 
         <div className="button-group mt-4">
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? "Saving..." : product ? "Save Product" : "Add Product"}
-          </button>
-          {product && (
-            <button type="button" className="btn btn-danger" onClick={handleDelete} disabled={loading}>Delete</button>
-          )}
+          <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? "Saving..." : product ? "Save Product" : "Add Product"}</button>
+          {product && <button type="button" className="btn btn-danger" onClick={handleDelete} disabled={loading}>Delete</button>}
           <button type="button" className="btn btn-secondary" onClick={() => setShowForm(false)} disabled={loading}>Cancel</button>
         </div>
       </fieldset>
     </form>
   );
 };
-
 export default ProductForm;
