@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase/config';
-import { useData } from '../context/DataContext'; // Import Context Hook
 import './SparePartForm.css';
 import './Form.css';
 
@@ -10,31 +9,41 @@ const TARGET_COLLECTION = 'spareParts_staging';
 
 const SparePartForm = ({ sparePart, companyId, productId, setShowForm }) => {
   const [sparePartData, setSparePartData] = useState(() => {
-    const initialData = { description: '', modelId: '', category: '', ...sparePart };
+    const initialData = {
+      description: '',
+      modelId: '',
+      category: '',
+      videoUrl: '', // NEW FIELD
+      ...sparePart,
+    };
     return initialData;
   });
   const [manual, setManual] = useState(null);
   const [thumbnail, setThumbnail] = useState(null);
   const [loading, setLoading] = useState(false);
-  
-  // Use Data Context to refresh cache
-  const { refreshSpareParts } = useData();
+  const [error, setError] = useState(null); // Simple error state for spare parts for now
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setSparePartData(prevData => ({ ...prevData, [name]: value }));
+    setSparePartData(prevData => ({
+      ...prevData,
+      [name]: value,
+    }));
+    setError(null);
   };
 
   const handleDelete = async () => {
     if (sparePart && sparePart.docId) {
       try {
         setLoading(true);
-        await updateDoc(doc(db, TARGET_COLLECTION, sparePart.docId), { isDeleted: true, updatedAt: serverTimestamp() });
-        await refreshSpareParts(productId); // REFRESH CACHE
+        await updateDoc(doc(db, TARGET_COLLECTION, sparePart.docId), {
+          isDeleted: true,
+          updatedAt: serverTimestamp(),
+        });
         setShowForm(false);
       } catch (error) {
         console.error("Error deleting document: ", error);
-        alert("Delete failed. Please try again.");
+        setError("Delete failed. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -45,27 +54,42 @@ const SparePartForm = ({ sparePart, companyId, productId, setShowForm }) => {
     e.preventDefault();
     setLoading(true);
 
-    const trimmedData = {};
-    for (const key in sparePartData) {
-        trimmedData[key] = typeof sparePartData[key] === 'string' ? sparePartData[key].trim() : sparePartData[key];
+    // Validate Video URL
+    if (sparePartData.videoUrl && sparePartData.videoUrl.trim() !== "") {
+        const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$/;
+        if (!youtubeRegex.test(sparePartData.videoUrl)) {
+            setError("Please enter a valid YouTube URL.");
+            setLoading(false);
+            return;
+        }
     }
 
-    try {
-      let manualUrl = sparePart ? sparePart.manualUrl : '';
-      let thumbNailUrl = sparePart ? sparePart.thumbNailUrl : '';
+    const trimmedData = {};
+    for (const key in sparePartData) {
+        if (typeof sparePartData[key] === 'string') {
+            trimmedData[key] = sparePartData[key].trim();
+        } else {
+            trimmedData[key] = sparePartData[key];
+        }
+    }
 
+    let manualUrl = sparePart ? sparePart.manualUrl : '';
+    let thumbNailUrl = sparePart ? sparePart.thumbNailUrl : '';
+
+    try {
       if (manual) {
         const storageRef = ref(storage, `manuals/${Date.now()}_${manual.name}`);
         await uploadBytes(storageRef, manual);
         manualUrl = await getDownloadURL(storageRef);
       }
+
       if (thumbnail) {
         const storageRef = ref(storage, `thumbnails/${Date.now()}_${thumbnail.name}`);
         await uploadBytes(storageRef, thumbnail);
         thumbNailUrl = await getDownloadURL(storageRef);
       }
 
-      const finalData = {
+      const finalSparePartData = {
         ...trimmedData,
         manualUrl,
         thumbNailUrl,
@@ -74,15 +98,19 @@ const SparePartForm = ({ sparePart, companyId, productId, setShowForm }) => {
       };
 
       if (sparePart && sparePart.docId) {
-        await updateDoc(doc(db, TARGET_COLLECTION, sparePart.docId), finalData);
+        await updateDoc(doc(db, TARGET_COLLECTION, sparePart.docId), finalSparePartData);
       } else {
-        await addDoc(collection(db, TARGET_COLLECTION), { ...finalData, companyId, productId, createdAt: serverTimestamp() });
+        await addDoc(collection(db, TARGET_COLLECTION), {
+          ...finalSparePartData,
+          companyId,
+          productId,
+          createdAt: serverTimestamp(),
+        });
       }
-      await refreshSpareParts(productId); // REFRESH CACHE
       setShowForm(false);
     } catch (error) {
       console.error("Error saving spare part: ", error);
-      alert("Failed to save spare part. Please try again.");
+      setError("Failed to save spare part. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -92,6 +120,9 @@ const SparePartForm = ({ sparePart, companyId, productId, setShowForm }) => {
     <form onSubmit={handleSubmit} className="form-container">
       <fieldset disabled={loading}>
         <h2 className="form-title">{sparePart ? 'Edit Spare Part' : 'Add Spare Part'}</h2>
+        
+        {error && <div className="alert alert-danger">{error}</div>}
+
         <div className="form-group">
           <label htmlFor="modelId">Model ID</label>
           <input id="modelId" name="modelId" value={sparePartData.modelId} onChange={handleChange} placeholder="Enter spare part model ID" className="form-control" required />
@@ -103,6 +134,19 @@ const SparePartForm = ({ sparePart, companyId, productId, setShowForm }) => {
         <div className="form-group">
           <label htmlFor="sparePartCategory">Category</label>
           <input id="sparePartCategory" name="category" value={sparePartData.category} onChange={handleChange} placeholder="Enter spare part category" className="form-control" required />
+        </div>
+
+        {/* --- NEW VIDEO URL FIELD --- */}
+        <div className="form-group">
+          <label htmlFor="videoUrl">YouTube Video URL</label>
+          <input
+            id="videoUrl"
+            name="videoUrl"
+            value={sparePartData.videoUrl}
+            onChange={handleChange}
+            placeholder="https://www.youtube.com/watch?v=..."
+            className="form-control"
+          />
         </div>
 
         <h5 className="mt-4">Files</h5>
@@ -120,12 +164,21 @@ const SparePartForm = ({ sparePart, companyId, productId, setShowForm }) => {
         </div>
 
         <div className="button-group mt-4">
-             <button type="submit" className="btn btn-primary">{loading ? 'Saving...' : (sparePart ? 'Save Changes' : 'Add Spare Part')}</button>
-             {sparePart && <button type="button" className="btn btn-danger" onClick={handleDelete} disabled={loading}>Delete</button>}
-              <button type="button" className="btn btn-secondary" onClick={() => setShowForm(false)} disabled={loading}>Cancel</button>
+             <button type="submit" className="btn btn-primary">
+               {loading ? 'Saving...' : (sparePart ? 'Save Changes' : 'Add Spare Part')}
+             </button>
+             {sparePart && (
+               <button type="button" className="btn btn-danger" onClick={handleDelete} disabled={loading}>
+                 Delete
+               </button>
+             )}
+              <button type="button" className="btn btn-secondary" onClick={() => setShowForm(false)} disabled={loading}>
+                 Cancel
+               </button>
         </div>
       </fieldset>
     </form>
   );
 };
+
 export default SparePartForm;
