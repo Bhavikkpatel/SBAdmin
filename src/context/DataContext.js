@@ -1,4 +1,3 @@
-// src/context/DataContext.js
 import React, { createContext, useState, useContext, useCallback } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
@@ -11,12 +10,14 @@ export const DataProvider = ({ children }) => {
   // Cache structures: { [parentId]: [arrayOfItems] }
   const [productsCache, setProductsCache] = useState({});
   const [sparePartsCache, setSparePartsCache] = useState({});
+  const [companyPartsCache, setCompanyPartsCache] = useState({});
 
-  // Helper to actually perform the fetch
+  // --- FIX IS HERE ---
+  // We must use 'parentField' and 'parentId' (the arguments), NOT 'companyId'.
   const fetchFromFirestore = async (collectionName, parentField, parentId) => {
     const q = query(
       collection(db, collectionName),
-      where(parentField, "==", parentId),
+      where(parentField, "==", parentId), // <--- Corrected variable
       where("isDeleted", "!=", true)
     );
     const snapshot = await getDocs(q);
@@ -25,38 +26,47 @@ export const DataProvider = ({ children }) => {
 
   // --- PRODUCTS ---
   const getProducts = useCallback(async (companyId, forceRefresh = false) => {
-    // If we have it in cache and aren't forcing a refresh, return cached data
     if (!forceRefresh && productsCache[companyId]) {
       return productsCache[companyId];
     }
-
-    // Otherwise, fetch from Firestore
+    // This calls fetchFromFirestore('products_staging', 'companyId', companyId)
     const products = await fetchFromFirestore('products_staging', 'companyId', companyId);
     
-    // Update cache
     setProductsCache(prev => ({ ...prev, [companyId]: products }));
     return products;
   }, [productsCache]);
 
-  // --- SPARE PARTS ---
+  // --- SPARE PARTS (By Product) ---
   const getSpareParts = useCallback(async (productId, forceRefresh = false) => {
     if (!forceRefresh && sparePartsCache[productId]) {
       return sparePartsCache[productId];
     }
-
+    // This calls fetchFromFirestore('spareParts_staging', 'productId', productId)
     const parts = await fetchFromFirestore('spareParts_staging', 'productId', productId);
     
     setSparePartsCache(prev => ({ ...prev, [productId]: parts }));
     return parts;
   }, [sparePartsCache]);
 
-  // Value to be exposed to components
+  // --- SPARE PARTS (By Company - NEW) ---
+  const getSparePartsByCompany = useCallback(async (companyId, forceRefresh = false) => {
+    if (!forceRefresh && companyPartsCache[companyId]) {
+      return companyPartsCache[companyId];
+    }
+    // This calls fetchFromFirestore('spareParts_staging', 'companyId', companyId)
+    const parts = await fetchFromFirestore('spareParts_staging', 'companyId', companyId);
+    
+    setCompanyPartsCache(prev => ({ ...prev, [companyId]: parts }));
+    return parts;
+  }, [companyPartsCache]);
+
   const value = {
     getProducts,
     getSpareParts,
-    // Helpers to force update after a form save
+    getSparePartsByCompany,
     refreshProducts: (companyId) => getProducts(companyId, true),
-    refreshSpareParts: (productId) => getSpareParts(productId, true)
+    refreshSpareParts: (productId) => getSpareParts(productId, true),
+    refreshCompanyParts: (companyId) => getSparePartsByCompany(companyId, true)
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

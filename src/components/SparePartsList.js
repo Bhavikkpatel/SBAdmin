@@ -18,20 +18,34 @@ const SparePartsList = ({ companyId, productId }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const { getSpareParts, refreshSpareParts } = useData();
+  // Added getSparePartsByCompany and refreshCompanyParts
+  const { getSpareParts, getSparePartsByCompany, refreshSpareParts, refreshCompanyParts } = useData();
 
   useEffect(() => {
-    if (!productId) return;
     let isMounted = true;
     setLoading(true);
-    getSpareParts(productId).then(data => {
+
+    const fetchData = async () => {
+       let data = [];
+       if (productId) {
+           // Existing Logic: Fetch by Product
+           data = await getSpareParts(productId);
+       } else if (companyId) {
+           // New Logic: Fetch by Company
+           const allCompanyParts = await getSparePartsByCompany(companyId);
+           // Filter for 'direct' parts (orphans) that have no productId
+           data = allCompanyParts.filter(part => !part.productId);
+       }
+
        if (isMounted) {
          setSpareParts(data);
          setLoading(false);
        }
-    });
+    };
+
+    fetchData();
     return () => { isMounted = false; };
-  }, [productId, getSpareParts]);
+  }, [companyId, productId, getSpareParts, getSparePartsByCompany]);
 
   const handleDeleteSparePart = async (part) => {
     if (window.confirm(`Are you sure you want to delete spare part "${part.modelId}"?`)) {
@@ -40,8 +54,15 @@ const SparePartsList = ({ companyId, productId }) => {
                 isDeleted: true, 
                 updatedAt: serverTimestamp() 
             });
-            const updatedData = await refreshSpareParts(productId);
-            setSpareParts(updatedData);
+            
+            // Refresh the appropriate list
+            if (productId) {
+                const updated = await refreshSpareParts(productId);
+                setSpareParts(updated);
+            } else {
+                const updatedAll = await refreshCompanyParts(companyId);
+                setSpareParts(updatedAll.filter(p => !p.productId));
+            }
         } catch (error) {
              console.error("Error deleting spare part:", error);
              alert("Failed to delete spare part.");
@@ -53,9 +74,22 @@ const SparePartsList = ({ companyId, productId }) => {
 
   return (
     <div style={{ width: '100%' }}>
+      {/* Header for Company Level Parts */}
+      {!productId && (
+        <div className="list-header" style={{ marginTop: '2rem' }}>
+          <h3>General Spare Parts</h3>
+          <button className="btn-add-primary" onClick={() => { setShowForm(true); setSelectedSparePart(null); }}>
+             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+             Add Spare Part
+          </button>
+        </div>
+      )}
+
       {spareParts.length === 0 ? (
         <div className="text-muted" style={{ fontStyle: 'italic', padding: '1rem', textAlign: 'center' }}>
-            No spare parts added yet. Use the "Add Spare Part" option in the parent product menu.
+            {productId 
+                ? 'No spare parts added yet. Use the "Add Spare Part" option in the parent product menu.' 
+                : 'No general spare parts found.'}
         </div>
       ) : (
         <div style={{ background: 'transparent' }}>
@@ -68,7 +102,6 @@ const SparePartsList = ({ companyId, productId }) => {
                     <img src={part.thumbNailUrl || 'https://placehold.co/48'} alt="" className="table-thumbnail" />
                   </td>
                   <td className="fw-medium td-model" style={{width: COL_WIDTHS.model, borderBottom: '1px dashed #e0e0e0'}}>
-                      {/* CHANGED: Model ID is now a clickable button-link to open modal */}
                       <button 
                           className="data-link-button" 
                           onClick={() => { setShowDetails(true); setSelectedSparePart(part); }}
@@ -85,10 +118,7 @@ const SparePartsList = ({ companyId, productId }) => {
                   </td>
                   <td className="td-actions" style={{width: COL_WIDTHS.actions, borderBottom: '1px dashed #e0e0e0'}}>
                     <div className="actions-cell">
-                       {/* Removed direct View/Edit buttons */}
-                       
                        <Dropdown alignRight={true}>
-                            {/* View included in dropdown for completeness */}
                             <button className="dropdown-item" onClick={() => { setShowDetails(true); setSelectedSparePart(part); }}>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                 View Details

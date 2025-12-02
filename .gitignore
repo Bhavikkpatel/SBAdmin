@@ -42,4 +42,5 @@ Thumbs.db
 *.sublime-workspace
 .vscode/
 
-src/serviceAccountKey.json
+src/adminScripts/
+BucketBackup/
